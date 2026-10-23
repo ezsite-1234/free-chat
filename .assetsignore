@@ -1,0 +1,12 @@
+# Only the three browser files should be published as static assets.
+index.js
+package.json
+package-lock.json
+wrangler.jsonc
+README.md
+README_SMARTPHONE.txt
+.gitignore
+.assetsignore
+node_modules/
+.wrangler/
+.git/
