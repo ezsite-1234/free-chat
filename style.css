@@ -1,0 +1,41 @@
+:root{--card:#0b1226;--line:#1c2850;--fg:#e6ebff;--mute:#9aa6cf;--acc:#5b8cff;--mine:#1c3a8c;--their:#141d3b;--err:#ff8a98;--ok:#6fe3b0}
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+html,body{height:100%;margin:0}
+body{background:linear-gradient(160deg,#000 0%,#0a1230 100%) fixed;color:var(--fg);font:16px/1.6 system-ui,"Hiragino Sans","Noto Sans JP",sans-serif;display:flex;align-items:center;justify-content:center;padding:16px}
+.card{width:100%;max-width:440px;background:var(--card);border:1px solid var(--line);border-radius:14px;padding:24px}
+h1{margin:0 0 12px;font-size:1.4rem}
+label{display:block;margin:16px 0 6px;color:var(--mute);font-size:.9rem}
+input,textarea{width:100%;font:inherit;color:var(--fg);background:#060b1c;border:1px solid var(--line);border-radius:10px;padding:12px;min-height:48px}
+input:focus,textarea:focus,button:focus-visible{outline:2px solid var(--acc);outline-offset:1px}
+button{font:inherit;min-height:48px;padding:0 18px;border-radius:10px;border:1px solid var(--line);background:#111a38;color:var(--fg);cursor:pointer}
+button.primary{background:var(--acc);border-color:var(--acc);color:#04091a;font-weight:700}
+button:disabled{opacity:.5;cursor:default}
+.row{display:flex;gap:10px;margin-top:18px}.row button{flex:1}
+.note{margin:8px 0 0;color:var(--mute);font-size:.85rem}
+.status{min-height:1.6em;margin:16px 0 0;font-size:.95rem;color:var(--mute)}.status.err{color:var(--err)}.status.ok{color:var(--ok)}
+.roomid{margin:12px 0;padding:14px;border:1px dashed var(--acc);border-radius:10px;font:700 1.25rem ui-monospace,monospace;word-break:break-all;text-align:center;user-select:all}
+.waiting{display:flex;align-items:center;gap:10px;color:var(--mute)}
+.spinner{width:16px;height:16px;border:2px solid var(--line);border-top-color:var(--acc);border-radius:50%;animation:spin 1s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+@media (prefers-reduced-motion:reduce){.spinner{animation-duration:4s}}
+body.is-chat{padding:0}
+body.is-chat .card{max-width:720px;height:100dvh;border-radius:0;border-width:0 1px;padding:0;display:flex;flex-direction:column}
+body.is-chat h1,body.is-chat .status{display:none}
+#s-chat{display:flex;flex-direction:column;flex:1;min-height:0}
+.head{display:flex;align-items:center;gap:10px;padding:calc(10px + env(safe-area-inset-top)) 14px 10px;border-bottom:1px solid var(--line)}
+.who{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:.95rem}
+.head button{min-height:40px}
+.conn{color:var(--ok);font-size:.85rem;white-space:nowrap}
+#log{flex:1;min-height:0;overflow-y:auto;list-style:none;margin:0;padding:14px;display:flex;flex-direction:column;gap:10px}
+#log li{max-width:82%;padding:8px 12px;border-radius:12px;overflow-wrap:anywhere}
+li.mine{align-self:flex-end;background:var(--mine)}li.theirs{align-self:flex-start;background:var(--their)}
+li.sys{align-self:center;max-width:100%!important;color:var(--mute);font-size:.85rem;padding:0!important;background:none}
+li.err{color:var(--err)}
+.meta{font-size:.75rem;color:var(--mute);margin-bottom:2px}li.mine .meta{color:#c9d4ff}
+.msg{white-space:pre-wrap}
+#form{display:flex;gap:8px;padding:10px 14px 4px;align-items:flex-end}
+#input{resize:none;max-height:120px;min-height:48px}
+#form button{flex-shrink:0}
+.hint{margin:0;padding:2px 14px calc(8px + env(safe-area-inset-bottom));color:var(--mute);font-size:.78rem}
+@media (max-width:420px){.card{padding:18px}.conn{font-size:.75rem}.who{font-size:.84rem}.head{gap:7px;padding-left:10px;padding-right:10px}.head button{padding:0 12px}}
