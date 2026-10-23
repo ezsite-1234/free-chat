@@ -1,0 +1,52 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="robots" content="noindex,nofollow">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; connect-src 'self' wss:; img-src 'self' data:; object-src 'none'; base-uri 'self'; form-action 'self'">
+  <title>FREE CHAT</title>
+  <link rel="stylesheet" href="./style.css">
+</head>
+<body>
+  <main class="card">
+    <h1 data-app-name></h1>
+
+    <section id="s-start">
+      <label for="room">部屋ID</label>
+      <input id="room" maxlength="24" autocomplete="off" autocapitalize="none" autocorrect="off" spellcheck="false" placeholder="半角英数字・最大24文字">
+      <p class="note">相手が作成した部屋のIDを入力しましょう。IDは部屋を作成した人に表示されています。存在しないIDを入力した場合は部屋を新規作成します。</p>
+      <label for="name">名前</label>
+      <input id="name" maxlength="16" autocomplete="off" placeholder="未入力なら自動で決まります">
+      <div class="row">
+        <button id="create" class="primary" type="button">作成</button>
+        <button id="join" type="button">入室</button>
+      </div>
+    </section>
+
+    <section id="s-wait" hidden>
+      <p>この部屋IDを相手に伝えてください。</p>
+      <div id="wait-room" class="roomid"></div>
+      <div class="row"><button id="copy" class="primary" type="button">IDをコピー</button><button id="cancel" type="button">退出</button></div>
+      <p class="waiting"><span class="spinner" aria-hidden="true"></span>相手の接続を待っています…</p>
+    </section>
+
+    <section id="s-chat" hidden>
+      <header class="head">
+        <div class="who">あなた <b id="me-name"></b>／相手 <b id="peer-name"></b></div>
+        <span class="conn">● 接続中</span>
+        <button id="leave" type="button">退出</button>
+      </header>
+      <ol id="log" aria-live="polite"></ol>
+      <form id="form">
+        <textarea id="input" rows="1" maxlength="500" placeholder="メッセージを入力" aria-label="メッセージ"></textarea>
+        <button id="send" class="primary" type="submit">送信</button>
+      </form>
+      <p class="hint">Enterで送信／Shift+Enterで改行　<span id="count">0/500</span></p>
+    </section>
+
+    <p id="status" class="status" role="status" aria-live="polite"></p>
+  </main>
+  <script src="./app.js" defer></script>
+</body>
+</html>
