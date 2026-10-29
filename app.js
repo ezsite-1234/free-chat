@@ -22,6 +22,7 @@ let me = null;
 let myName = "";
 let roomId = "";
 let phase = "home";
+let participants = [];
 let lastPong = 0;
 let connectTimer = null;
 let heartbeatTimer = null;
@@ -96,12 +97,14 @@ function goHome(message = "", kind = "") {
   clearTimers();
   phase = "home";
   me = null;
+  participants = [];
   closeLocalSocket();
   log.replaceChildren();
   input.value = "";
   resizeInput();
   $("me-name").textContent = "";
   $("peer-name").textContent = "";
+  $("member-count").textContent = "人数: 0/4人";
   $("wait-room").textContent = "";
   $("create").disabled = false;
   $("join").disabled = false;
@@ -213,6 +216,8 @@ function handleMessage(socket, raw) {
   switch (message.t) {
     case "waiting": {
       me = message.me || null;
+      participants = Array.isArray(message.participants) ? message.participants : [];
+      updateParticipantsUI(message.count);
       phase = "wait";
       clearTimeout(connectTimer);
       connectTimer = null;
@@ -229,16 +234,37 @@ function handleMessage(socket, raw) {
     }
     case "start": {
       me = message.me || null;
+      participants = Array.isArray(message.participants) ? message.participants : [];
       phase = "chat";
       clearTimeout(connectTimer);
       connectTimer = null;
       startHeartbeat(socket);
       $("me-name").textContent = myName;
-      $("peer-name").textContent = message.peer && message.peer.name ? message.peer.name : "相手";
+      updateParticipantsUI(message.count);
       log.replaceChildren();
       show("chat");
-      addSystemMessage("相手が入室しました。履歴はこの画面のメモリだけに残り、退出すると消えます。");
+      addSystemMessage(
+        Number(message.count) > 2
+          ? "チャットに参加しました。履歴はこの画面のメモリだけに残り、退出すると消えます。"
+          : "相手が入室しました。履歴はこの画面のメモリだけに残り、退出すると消えます。"
+      );
       input.focus();
+      break;
+    }
+    case "joined": {
+      if (Array.isArray(message.participants)) participants = message.participants;
+      updateParticipantsUI(message.count);
+      if (phase === "chat") {
+        addSystemMessage((message.participant && message.participant.name ? message.participant.name : "参加者") + "が入室しました。");
+      }
+      break;
+    }
+    case "left": {
+      if (Array.isArray(message.participants)) participants = message.participants;
+      updateParticipantsUI(message.count);
+      if (phase === "chat") {
+        addSystemMessage((message.participant && message.participant.name ? message.participant.name : "参加者") + "が退出しました。");
+      }
       break;
     }
     case "msg":
@@ -259,6 +285,18 @@ function handleMessage(socket, raw) {
       // 未知のイベントは無視する。
       break;
   }
+}
+
+function updateParticipantsUI(count) {
+  const peerNames = participants
+    .filter((participant) => participant && participant.me !== me && typeof participant.name === "string")
+    .map((participant) => participant.name);
+  $("peer-name").textContent = peerNames.length ? peerNames.join("・") : "相手";
+  const parsedCount = Number(count);
+  const visibleCount = Number.isInteger(parsedCount) && parsedCount >= 0 && parsedCount <= 4
+    ? parsedCount
+    : participants.length;
+  $("member-count").textContent = "人数: " + visibleCount + "/4人";
 }
 
 function addSystemMessage(text, extraClass = "") {
@@ -286,11 +324,48 @@ function addMessage(message) {
 
   const body = document.createElement("div");
   body.className = "msg";
-  body.textContent = message.text.slice(0, MAX_MSG); // HTMLとして実行させない。
+  appendLinkedText(body, message.text.slice(0, MAX_MSG));
 
   item.append(meta, body);
   log.appendChild(item);
   if (mine || nearBottom) log.scrollTop = log.scrollHeight;
+}
+
+function appendLinkedText(container, text) {
+  // URLは http(s):// または www. から自動検知し、HTMLとして解釈せず安全にリンク化する。
+  const pattern = /https?:\/\/[^\s<>"'、。！？]+|www\.[^\s<>"'、。！？]+/giu;
+  const trailingPunctuation = /[.,!?;:、。！？）】」』〉》]+$/u;
+  let cursor = 0;
+
+  for (const match of text.matchAll(pattern)) {
+    const start = match.index;
+    const raw = match[0];
+    let linkText = raw;
+    while (linkText && trailingPunctuation.test(linkText)) linkText = linkText.slice(0, -1);
+    while (linkText.endsWith(")") && (linkText.match(/\(/g) || []).length < (linkText.match(/\)/g) || []).length) {
+      linkText = linkText.slice(0, -1);
+    }
+
+    container.appendChild(document.createTextNode(text.slice(cursor, start)));
+    if (linkText) {
+      const href = linkText.startsWith("www.") ? "https://" + linkText : linkText;
+      try {
+        const parsed = new URL(href);
+        if (parsed.protocol !== "http:" && parsed.protocol !== "https:") throw new Error("Unsupported URL protocol");
+        const anchor = document.createElement("a");
+        anchor.href = parsed.href;
+        anchor.target = "_blank";
+        anchor.rel = "noopener noreferrer nofollow";
+        anchor.textContent = linkText;
+        container.appendChild(anchor);
+      } catch (_) {
+        container.appendChild(document.createTextNode(linkText));
+      }
+    }
+    container.appendChild(document.createTextNode(raw.slice(linkText.length)));
+    cursor = start + raw.length;
+  }
+  container.appendChild(document.createTextNode(text.slice(cursor)));
 }
 
 function sendMessage() {

@@ -145,8 +145,8 @@ export class Room extends DurableObject {
       reject("exists", "この部屋IDはすでに使われています。別のIDを使用してください。");
       return new Response(null, { status: 101, webSocket: client });
     }
-    if (peers.length >= 2) {
-      reject("full", "この部屋は満員です。");
+    if (peers.length >= 4) {
+      reject("full", "この部屋は満員です（最大4人）。");
       return new Response(null, { status: 101, webSocket: client });
     }
 
@@ -161,12 +161,46 @@ export class Room extends DurableObject {
       at: now,
     });
 
+    const participants = peers.map((member) => {
+      const memberInfo = member.deserializeAttachment();
+      return { me: memberInfo.me, name: memberInfo.name };
+    });
+    participants.push({ me, name });
+
     if (peers.length === 0) {
-      send(server, { t: "waiting", me, created: mode === "join" });
+      send(server, {
+        t: "waiting",
+        me,
+        created: mode === "join",
+        count: 1,
+        participants,
+      });
     } else {
-      const other = peers[0].deserializeAttachment();
-      send(server, { t: "start", me, peer: { name: other.name } });
-      send(peers[0], { t: "start", me: other.me, peer: { name } });
+      const peerList = participants.filter((participant) => participant.me !== me);
+      const peer = peerList.length === 1 ? { name: peerList[0].name } : undefined;
+      send(server, { t: "start", me, peer, count: participants.length, participants });
+
+      if (peers.length === 1) {
+        // The second participant starts the existing two-person chat as before.
+        send(peers[0], {
+          t: "start",
+          me: peers[0].deserializeAttachment().me,
+          peer: { name },
+          count: participants.length,
+          participants,
+        });
+      } else {
+        // Third/fourth participants join the current chat without restarting it.
+        const participant = { me, name };
+        for (const existing of peers) {
+          send(existing, {
+            t: "joined",
+            participant,
+            count: participants.length,
+            participants,
+          });
+        }
+      }
     }
 
     await this.ctx.storage.setAlarm(now + ALARM_MS);
@@ -207,7 +241,7 @@ export class Room extends DurableObject {
     }
 
     if (message?.t === "leave") {
-      await this.endRoom("相手が退出したため、部屋を終了しました。");
+      await this.depart(ws, true, "相手が退出したため、部屋を終了しました。");
       return;
     }
 
@@ -244,7 +278,7 @@ export class Room extends DurableObject {
     ws.serializeAttachment(attachment);
 
     const participants = this.members();
-    if (participants.length !== 2) return;
+    if (participants.length < 2) return;
 
     const payload = {
       t: "msg",
@@ -265,7 +299,41 @@ export class Room extends DurableObject {
   }
 
   async finish(ws, reason) {
-    if (ws.deserializeAttachment()?.joined === true) await this.endRoom(reason);
+    await this.depart(ws, false, reason);
+  }
+
+  async depart(ws, explicit, fallbackReason) {
+    const attachment = ws.deserializeAttachment();
+    if (attachment?.joined !== true) return;
+
+    // When the departure leaves at least two people behind, keep the group alive.
+    // With only one or zero people remaining, retain the original room-ending behavior.
+    const remaining = this.members().filter((member) => member !== ws);
+    if (remaining.length >= 2) {
+      ws.serializeAttachment({ ...attachment, joined: false });
+      const participants = remaining.map((member) => {
+        const info = member.deserializeAttachment();
+        return { me: info.me, name: info.name };
+      });
+      const participant = { me: attachment.me, name: attachment.name };
+
+      for (const member of remaining) {
+        send(member, {
+          t: "left",
+          participant,
+          count: participants.length,
+          participants,
+        });
+      }
+
+      if (explicit) send(ws, { t: "ended", reason: "退出しました。" });
+      try { ws.close(1000, "left"); } catch (_) {}
+      await this.ctx.storage.setAlarm(Date.now() + ALARM_MS);
+      return;
+    }
+
+    // A two-person chat still ends for everyone when one of them leaves.
+    await this.endRoom(fallbackReason);
   }
 
   async endRoom(reason) {
@@ -291,8 +359,9 @@ export class Room extends DurableObject {
     for (const ws of participants) {
       const attachment = ws.deserializeAttachment();
       if (now - (attachment.last || attachment.at || 0) > STALE_MS) {
-        await this.endRoom("接続が途切れたため、部屋を終了しました。");
-        return;
+        await this.depart(ws, false, "接続が途切れたため、部屋を終了しました。");
+        // Re-evaluate current membership; a group may continue after one stale member leaves.
+        return this.alarm();
       }
     }
     await this.ctx.storage.setAlarm(now + ALARM_MS);

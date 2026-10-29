@@ -25,15 +25,18 @@
     </section>
 
     <section id="s-wait" hidden>
-      <p>この部屋IDを相手に伝えてください。</p>
+      <p>この部屋IDを参加者に伝えてください。</p>
       <div id="wait-room" class="roomid"></div>
       <div class="row"><button id="copy" class="primary" type="button">IDをコピー</button><button id="cancel" type="button">退出</button></div>
-      <p class="waiting"><span class="spinner" aria-hidden="true"></span>相手の接続を待っています…</p>
+      <p class="waiting"><span class="spinner" aria-hidden="true"></span>ほかの参加者の接続を待っています…</p>
     </section>
 
     <section id="s-chat" hidden>
       <header class="head">
-        <div class="who">あなた <b id="me-name"></b>／相手 <b id="peer-name"></b></div>
+        <div class="who-wrap">
+          <div class="who">あなた <b id="me-name"></b>／相手 <b id="peer-name"></b></div>
+          <span id="member-count" class="member-count" aria-live="polite">人数: 0/4人</span>
+        </div>
         <span class="conn">● 接続中</span>
         <button id="leave" type="button">退出</button>
       </header>

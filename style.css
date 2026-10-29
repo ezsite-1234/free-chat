@@ -24,7 +24,9 @@ body.is-chat .card{max-width:720px;height:100dvh;border-radius:0;border-width:0 
 body.is-chat h1,body.is-chat .status{display:none}
 #s-chat{display:flex;flex-direction:column;flex:1;min-height:0}
 .head{display:flex;align-items:center;gap:10px;padding:calc(10px + env(safe-area-inset-top)) 14px 10px;border-bottom:1px solid var(--line)}
-.who{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:.95rem}
+.who-wrap{flex:1;min-width:0;display:flex;flex-direction:column;gap:1px}
+.who{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:.95rem}
+.member-count{color:var(--mute);font-size:.76rem;line-height:1.25;white-space:nowrap}
 .head button{min-height:40px}
 .conn{color:var(--ok);font-size:.85rem;white-space:nowrap}
 #log{flex:1;min-height:0;overflow-y:auto;list-style:none;margin:0;padding:14px;display:flex;flex-direction:column;gap:10px}
@@ -34,8 +36,10 @@ li.sys{align-self:center;max-width:100%!important;color:var(--mute);font-size:.8
 li.err{color:var(--err)}
 .meta{font-size:.75rem;color:var(--mute);margin-bottom:2px}li.mine .meta{color:#c9d4ff}
 .msg{white-space:pre-wrap}
+.msg a{color:#a9c5ff;text-decoration:underline;overflow-wrap:anywhere;word-break:break-word}
+.msg a:visited{color:#c6a8ff}
 #form{display:flex;gap:8px;padding:10px 14px 4px;align-items:flex-end}
 #input{resize:none;max-height:120px;min-height:48px}
 #form button{flex-shrink:0}
 .hint{margin:0;padding:2px 14px calc(8px + env(safe-area-inset-bottom));color:var(--mute);font-size:.78rem}
-@media (max-width:420px){.card{padding:18px}.conn{font-size:.75rem}.who{font-size:.84rem}.head{gap:7px;padding-left:10px;padding-right:10px}.head button{padding:0 12px}}
+@media (max-width:420px){.card{padding:18px}.conn{font-size:.75rem}.who{font-size:.84rem}.member-count{font-size:.72rem}.head{gap:7px;padding-left:10px;padding-right:10px}.head button{padding:0 12px}}
